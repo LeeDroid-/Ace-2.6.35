@@ -24,6 +24,7 @@
 #include "devices.h"
 #include <mach/board.h>
 #include <mach/board_htc.h>
+#include <mach/irqs.h>
 #include <mach/msm_hsusb.h>
 #include <linux/usb/android_composite.h>
 
