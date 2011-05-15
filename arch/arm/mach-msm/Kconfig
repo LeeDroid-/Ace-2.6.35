@@ -1323,6 +1323,11 @@ config MSM_CPU_FREQ_ONDEMAND_MIN
 	int "Min"
 	default 245760
 
+config NUTTER
+	bool "Nutter mode - Max O/C 1.8GHz"
+	default n
+	depends on CPU_FREQ && !PERFLOCK
+
 config MSM_HW3D
 	tristate "MSM Hardware 3D Register Driver"
 	depends on EARLYSUSPEND
