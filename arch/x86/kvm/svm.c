@@ -3067,8 +3067,8 @@ static void svm_vcpu_run(struct kvm_vcpu *vcpu)
 	sync_lapic_to_cr8(vcpu);
 
 	save_host_msrs(vcpu);
-	fs_selector = kvm_read_fs();
-	gs_selector = kvm_read_gs();
+	savesegment(fs, fs_selector);
+	savesegment(gs, gs_selector);
 	ldt_selector = kvm_read_ldt();
 	svm->vmcb->save.cr2 = vcpu->arch.cr2;
 	/* required for live migration with NPT */
