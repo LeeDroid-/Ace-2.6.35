@@ -28,7 +28,7 @@
 #ifndef __LINUX_MFD_MSM_MARIMBA_CODEC_H
 #define __LINUX_MFD_MSM_MARIMBA_CODEC_H
 
-#include <mach/qdsp5v2/adie_marimba.h>
+#include <mach/qdsp5v2_1x/adie_marimba.h>
 
 struct adie_codec_register {
 	u8 reg;

@@ -16,7 +16,6 @@
  */
 
 #include <linux/version.h>
-#include <mach/debug_audio_mm.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
@@ -32,7 +31,7 @@
 #include <linux/slab.h>
 #include <asm/atomic.h>
 #include <asm/ioctls.h>
-#include <mach/msm_adsp_1x.h>
+#include <mach/msm_adsp.h>
 
 #include <linux/msm_audio_7X30.h>
 #include <mach/qdsp5v2_1x/audio_dev_ctl.h>
@@ -42,6 +41,7 @@
 #include <mach/qdsp5v2_1x/qdsp5audplaymsg.h>
 #include <mach/qdsp5v2_1x/audio_dev_ctl.h>
 #include <mach/qdsp5v2_1x/audpp.h>
+#include <mach/debug_mm.h>
 
 #define ADRV_STATUS_AIO_INTF 0x00000001
 #define ADRV_STATUS_OBUF_GIVEN 0x00000002
@@ -291,7 +291,7 @@ static void mp3_listner(u32 evt_id, union auddev_evt_data *evt_payload,
 					POPP);
 		break;
 	default:
-		MM_AUD_ERR(":ERROR:wrong event\n");
+		MM_ERR(":ERROR:wrong event\n");
 		break;
 	}
 }
@@ -303,16 +303,17 @@ static int audio_enable(struct audio *audio)
 	if (audio->enabled)
 		return 0;
 
+	audio->dec_state = MSM_AUD_DECODER_STATE_NONE;
 	audio->out_tail = 0;
 	audio->out_needed = 0;
 
 	if (msm_adsp_enable(audio->audplay)) {
-		MM_AUD_ERR("msm_adsp_enable(audplay) failed\n");
+		MM_ERR("msm_adsp_enable(audplay) failed\n");
 		return -ENODEV;
 	}
 
 	if (audpp_enable(audio->dec_id, audio_dsp_event, audio)) {
-		MM_AUD_ERR("audpp_enable() failed\n");
+		MM_ERR("audpp_enable() failed\n");
 		msm_adsp_disable(audio->audplay);
 		return -ENODEV;
 	}
@@ -375,7 +376,7 @@ static void audmp3_async_pcm_buf_update(struct audio *audio, uint32_t *payload)
 						event_payload);
 			kfree(filled_buf);
 		} else {
-			MM_AUD_ERR("expected=%lx ret=%x\n", filled_buf->paddr,
+			MM_ERR("expected=%lx ret=%x\n", filled_buf->paddr,
 					payload[2 + index * 2]);
 			break;
 		}
@@ -406,7 +407,7 @@ static void audio_update_pcm_buf_entry(struct audio *audio, uint32_t *payload)
 				audio->fill_next = 0;
 
 		} else {
-			MM_AUD_ERR("expected=%x ret=%x\n",
+			MM_ERR("expected=%x ret=%x\n",
 					audio->in[audio->fill_next].addr,
 					payload[2 + index * 2]);
 			break;
@@ -429,7 +430,7 @@ static void audmp3_bitstream_error_info(struct audio *audio, uint32_t *payload)
 	union msm_audio_event_payload e_payload;
 
 	if (payload[0] != AUDDEC_DEC_MP3) {
-		MM_AUD_ERR("Unexpected bitstream error info from DSP:\
+		MM_ERR("Unexpected bitstream error info from DSP:\
 				Invalid decoder\n");
 		return;
 	}
@@ -442,7 +443,7 @@ static void audmp3_bitstream_error_info(struct audio *audio, uint32_t *payload)
 	audio->bitstream_error_info.err_type = payload[2];
 
 	spin_unlock_irqrestore(&audio->dsp_lock, flags);
-	MM_AUD_ERR("bit_stream_error_type=%d error_count=%d\n",
+	MM_ERR("bit_stream_error_type=%d error_count=%d\n",
 			audio->bitstream_error_info.err_type, (0x0000FFFF &
 			audio->bitstream_error_info.err_msg_indicator));
 
@@ -516,7 +517,7 @@ static void audplay_dsp_event(void *data, unsigned id, size_t len,
 		break;
 
 	default:
-		MM_AUD_ERR("unexpected message from decoder \n");
+		MM_ERR("unexpected message from decoder \n");
 		break;
 	}
 }
@@ -574,7 +575,7 @@ static void audio_dsp_event(void *private, unsigned id, uint16_t *msg)
 				wake_up(&audio->wait);
 				break;
 			default:
-				MM_AUD_ERR("unknown decoder status \n");
+				MM_ERR("unknown decoder status \n");
 				break;
 			}
 			break;
@@ -624,7 +625,7 @@ static void audio_dsp_event(void *private, unsigned id, uint16_t *msg)
 		break;
 
 	default:
-		MM_AUD_ERR("UNKNOWN (%d)\n", id);
+		MM_ERR("UNKNOWN (%d)\n", id);
 	}
 
 }
@@ -1072,7 +1073,7 @@ static long audmp3_process_event_req(struct audio *audio, void __user *arg)
 		usr_evt.event_payload = drv_evt->payload;
 		list_add_tail(&drv_evt->list, &audio->free_event_queue);
 	} else {
-		MM_AUD_ERR("%s: fail to find event\n", __func__);
+		MM_ERR("%s: fail to find event\n", __func__);
 		spin_unlock_irqrestore(&audio->event_queue_lock, flags);
 		return -1;
 	}
@@ -1101,7 +1102,7 @@ static int audmp3_pmem_check(struct audio *audio,
 	list_for_each_entry(region_elt, &audio->pmem_region_queue, list) {
 		if (CONTAINS(region_elt, &t) || CONTAINS(&t, region_elt) ||
 		    OVERLAPS(region_elt, &t)) {
-			MM_AUD_ERR("region (vaddr %p len %ld)"
+			MM_ERR("region (vaddr %p len %ld)"
 				" clashes with registered region"
 				" (vaddr %p paddr %p len %ld)\n",
 				vaddr, len,
@@ -1215,14 +1216,13 @@ static int audmp3_pmem_lookup_vaddr(struct audio *audio, void *addr,
 	}
 
 	if (match_count > 1) {
-		MM_AUD_ERR("multiple hits for vaddr %p, len %ld\n", addr, len);
+		MM_ERR("multiple hits for vaddr %p, len %ld\n", addr, len);
 		list_for_each_entry(region_elt,
 		  &audio->pmem_region_queue, list) {
 			if (addr >= region_elt->vaddr &&
 			    addr < region_elt->vaddr + region_elt->len &&
 			    addr + len <= region_elt->vaddr + region_elt->len)
-				MM_AUD_ERR("\t%p, %ld --> %p\n",
-						region_elt->vaddr,
+				MM_ERR("\t%p, %ld --> %p\n", region_elt->vaddr,
 						region_elt->len,
 						(void *)region_elt->paddr);
 		}
@@ -1240,7 +1240,7 @@ unsigned long audmp3_pmem_fixup(struct audio *audio, void *addr,
 
 	ret = audmp3_pmem_lookup_vaddr(audio, addr, len, &region);
 	if (ret) {
-		MM_AUD_ERR("lookup (%p, %ld) failed\n", addr, len);
+		MM_ERR("lookup (%p, %ld) failed\n", addr, len);
 		return 0;
 	}
 	if (ref_up)
@@ -1458,14 +1458,12 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	switch (cmd) {
 	case AUDIO_START:
 		MM_DBG("AUDIO_START\n");
-		audio->dec_state = MSM_AUD_DECODER_STATE_NONE;
 		rc = audio_enable(audio);
 		if (!rc) {
 			rc = wait_event_interruptible_timeout(audio->wait,
 				audio->dec_state != MSM_AUD_DECODER_STATE_NONE,
 				msecs_to_jiffies(MSM_AUD_DECODER_WAIT_MS));
-			MM_AUD_INFO("dec_state %d rc = %d\n",
-					audio->dec_state, rc);
+			MM_INFO("dec_state %d rc = %d\n", audio->dec_state, rc);
 
 			if (audio->dec_state != MSM_AUD_DECODER_STATE_SUCCESS)
 				rc = -ENODEV;
@@ -1490,7 +1488,7 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			rc = wait_event_interruptible(audio->write_wait,
 				!audio->wflush);
 			if (rc < 0) {
-				MM_AUD_ERR("AUDIO_FLUSH interrupted\n");
+				MM_ERR("AUDIO_FLUSH interrupted\n");
 				rc = -EINTR;
 			}
 		} else {
@@ -1513,7 +1511,7 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		rc = wait_event_interruptible(audio->read_wait,
 				!audio->rflush);
 		if (rc < 0) {
-			MM_AUD_ERR("AUDPLAY_OUTPORT_FLUSH interrupted\n");
+			MM_ERR("AUDPLAY_OUTPORT_FLUSH interrupted\n");
 			rc = -EINTR;
 		}
 		break;
@@ -1577,7 +1575,7 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			}
 
 			if (config.pcm_feedback != audio->pcm_feedback) {
-				MM_AUD_ERR("Not sufficient permission to"
+				MM_ERR("Not sufficient permission to"
 					 "change the playback mode\n");
 				rc = -EACCES;
 				break;
@@ -1612,7 +1610,7 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 							config.buffer_size *
 							config.buffer_count);
 				if (!audio->read_data) {
-					MM_AUD_ERR("malloc read buf failed\n");
+					MM_ERR("malloc read buf failed\n");
 					rc = -ENOMEM;
 					pmem_kfree(audio->read_phys);
 				} else {
@@ -1891,8 +1889,7 @@ static ssize_t audio_read(struct file *file, char __user *buf, size_t count,
 			if (copy_to_user
 			    (buf, audio->in[audio->read_next].data,
 			     audio->in[audio->read_next].used)) {
-				MM_AUD_ERR("invalid addr %x \n",
-						(unsigned int)buf);
+				MM_ERR("invalid addr %x \n", (unsigned int)buf);
 				rc = -EFAULT;
 				break;
 			}
@@ -2124,9 +2121,7 @@ static int audio_release(struct inode *inode, struct file *file)
 {
 	struct audio *audio = file->private_data;
 
-	MM_DBG("\n"); /* Macro prints the file name and function */
-
-	MM_AUD_INFO("audio instance 0x%08x freeing\n", (int)audio);
+	MM_INFO("audio instance 0x%08x freeing\n", (int)audio);
 	mutex_lock(&audio->lock);
 	auddev_unregister_evt_listner(AUDDEV_CLNT_DEC, audio->dec_id);
 	audio_disable(audio);
@@ -2175,7 +2170,7 @@ static void audmp3_post_event(struct audio *audio, int type,
 	} else {
 		e_node = kmalloc(sizeof(struct audmp3_event), GFP_ATOMIC);
 		if (!e_node) {
-			MM_AUD_ERR("No mem to post event %d\n", type);
+			MM_ERR("No mem to post event %d\n", type);
 			return;
 		}
 	}
@@ -2302,11 +2297,11 @@ static int audio_open(struct inode *inode, struct file *file)
 	/* Allocate audio instance, set to zero */
 	audio = kzalloc(sizeof(struct audio), GFP_KERNEL);
 	if (!audio) {
-		MM_AUD_ERR("no memory to allocate audio instance \n");
+		MM_ERR("no memory to allocate audio instance \n");
 		rc = -ENOMEM;
 		goto done;
 	}
-	MM_AUD_INFO("audio instance 0x%08x created\n", (int)audio);
+	MM_INFO("audio instance 0x%08x created\n", (int)audio);
 
 	/* Allocate the decoder */
 	dec_attrb = AUDDEC_DEC_MP3;
@@ -2327,9 +2322,9 @@ static int audio_open(struct inode *inode, struct file *file)
 	decid = audpp_adec_alloc(dec_attrb, &audio->module_name,
 			&audio->queue_id);
 	if (decid < 0) {
-		MM_AUD_ERR("No free decoder available\n");
+		MM_ERR("No free decoder available, freeing instance 0x%08x\n",
+				(int)audio);
 		rc = -ENODEV;
-		MM_AUD_INFO("audio instance 0x%08x freeing\n", (int)audio);
 		kfree(audio);
 		goto done;
 	}
@@ -2354,28 +2349,25 @@ static int audio_open(struct inode *inode, struct file *file)
 			if (!IS_ERR((void *)audio->phys)) {
 				audio->data = ioremap(audio->phys, pmem_sz);
 				if (!audio->data) {
-					MM_AUD_ERR("could not allocate write\
-						buffers\n");
+					MM_ERR("could not allocate write \
+						buffers, freeing instance \
+						0x%08x\n", (int)audio);
 					rc = -ENOMEM;
 					pmem_kfree(audio->phys);
 					audpp_adec_free(audio->dec_id);
-					MM_AUD_INFO("audio instance 0x%08x\
-						freeing\n", (int)audio);
 					kfree(audio);
 					goto done;
 				}
-				MM_AUD_INFO("write buf: \
-					phy addr 0x%08x kernel addr \
+				MM_DBG("write buf: phy addr 0x%08x kernel addr\
 					0x%08x\n", audio->phys,\
 					(int)audio->data);
 				break;
 			} else if (pmem_sz == DMASZ_MIN) {
-				MM_AUD_ERR("could not allocate \
-						write buffers\n");
+				MM_ERR("could not allocate write buffers, \
+						freeing instance 0x%08x\n",
+						(int)audio);
 				rc = -ENOMEM;
 				audpp_adec_free(audio->dec_id);
-				MM_AUD_INFO("audio instance 0x%08x freeing\n",\
-					(int)audio);
 				kfree(audio);
 				goto done;
 			} else
@@ -2401,7 +2393,8 @@ static int audio_open(struct inode *inode, struct file *file)
 		&audplay_adsp_ops, audio);
 
 	if (rc) {
-		MM_AUD_ERR("failed to get %s module\n", audio->module_name);
+		MM_ERR("failed to get %s module freeing instance 0x%08x\n",
+				audio->module_name, (int)audio);
 		goto err;
 	}
 
@@ -2444,7 +2437,7 @@ static int audio_open(struct inode *inode, struct file *file)
 					mp3_listner,
 					(void *)audio);
 	if (rc) {
-		MM_AUD_ERR("%s: failed to register listnet\n", __func__);
+		MM_ERR("%s: failed to register listner\n", __func__);
 		goto event_err;
 	}
 
@@ -2468,7 +2461,7 @@ static int audio_open(struct inode *inode, struct file *file)
 		if (e_node)
 			list_add_tail(&e_node->list, &audio->free_event_queue);
 		else {
-			MM_AUD_ERR("event pkt alloc failed\n");
+			MM_ERR("event pkt alloc failed\n");
 			break;
 		}
 	}
@@ -2485,7 +2478,6 @@ err:
 		pmem_kfree(audio->phys);
 	}
 	audpp_adec_free(audio->dec_id);
-	MM_AUD_INFO("audio instance 0x%08x freeing\n", (int)audio);
 	kfree(audio);
 	return rc;
 }

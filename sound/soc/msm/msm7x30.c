@@ -36,9 +36,8 @@
 
 #include "msm7kv2-pcm.h"
 #include <asm/mach-types.h>
-#include <mach/qdsp5v2/snddev_icodec.h>
-#include <linux/mfd/msm-adie-codec.h>
-#include <mach/qdsp5v2/audio_dev_ctl.h>
+#include <mach/qdsp5v2_1x/snddev_icodec.h>
+#include <mach/qdsp5v2_1x/audio_dev_ctl.h>
 #include <mach/debug_mm.h>
 #include <linux/rtc.h>
 

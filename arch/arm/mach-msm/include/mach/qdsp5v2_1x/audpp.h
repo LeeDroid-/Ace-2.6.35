@@ -17,7 +17,7 @@
 #ifndef _MACH_QDSP5_V2_AUDPP_H
 #define _MACH_QDSP5_V2_AUDPP_H
 
-#include <mach/qdsp5v2/qdsp5audppcmdi.h>
+#include <mach/qdsp5v2_1x/qdsp5audppcmdi.h>
 
 typedef void (*audpp_event_func)(void *private, unsigned id, uint16_t *msg);
 
@@ -44,6 +44,10 @@ typedef void (*audpp_event_func)(void *private, unsigned id, uint16_t *msg);
 #define AUDPP_MIXER_2 AUDPP_CMD_CFG_DEV_MIXER_DEV_2
 #define AUDPP_MIXER_3 AUDPP_CMD_CFG_DEV_MIXER_DEV_3
 #define AUDPP_MIXER_HLB AUDPP_CMD_CFG_DEV_MIXER_DEV_4
+#define AUDPP_MIXER_NONHLB (AUDPP_CMD_CFG_DEV_MIXER_DEV_0 | \
+			AUDPP_CMD_CFG_DEV_MIXER_DEV_1 | \
+			AUDPP_CMD_CFG_DEV_MIXER_DEV_2 | \
+			AUDPP_CMD_CFG_DEV_MIXER_DEV_3)
 #define AUDPP_MAX_COPP_DEVICES		5
 
 enum obj_type {
@@ -106,4 +110,10 @@ int audpp_dsp_set_rx_iir(unsigned id, unsigned enable,
 	struct audpp_cmd_cfg_object_params_pcm *iir,
 	enum obj_type objtype);
 
+int audpp_dsp_set_gain_rx(unsigned id,
+	struct audpp_cmd_cfg_cal_gain *calib_gain_rx,
+	enum obj_type objtype);
+int audpp_dsp_set_pbe(unsigned id, unsigned enable,
+	struct audpp_cmd_cfg_pbe *pbe_block,
+	enum obj_type objtype);
 #endif

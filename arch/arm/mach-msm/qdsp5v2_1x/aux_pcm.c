@@ -1,60 +1,20 @@
 /* Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Code Aurora Forum nor
- *       the names of its contributors may be used to endorse or promote
- *       products derived from this software without specific prior written
- *       permission.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
  *
- * Alternatively, provided that this notice is retained in full, this software
- * may be relicensed by the recipient under the terms of the GNU General Public
- * License version 2 ("GPL") and only version 2, in which case the provisions of
- * the GPL apply INSTEAD OF those given above.  If the recipient relicenses the
- * software under the GPL, then the identification text in the MODULE_LICENSE
- * macro must be changed to reflect "GPLv2" instead of "Dual BSD/GPL".  Once a
- * recipient changes the license terms to the GPL, subsequent recipients shall
- * not relicense under alternate licensing terms, including the BSD or dual
- * BSD/GPL terms.  In addition, the following license statement immediately
- * below and between the words START and END shall also then apply when this
- * software is relicensed under the GPL:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * START
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License version 2 and only version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * END
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
  *
  */
-#include <mach/debug_audio_mm.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/platform_device.h>
@@ -64,6 +24,7 @@
 #include <mach/gpio.h>
 #include "../proc_comm.h"
 #include <linux/delay.h>
+#include <mach/debug_mm.h>
 
 /*----------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
@@ -160,23 +121,23 @@ int aux_pcm_gpios_request(void)
 {
 	int rc = 0;
 
-	MM_AUD_INFO(" aux_pcm_gpios_request \n");
+	MM_DBG("aux_pcm_gpios_request\n");
 	rc = gpio_request(the_aux_pcm_state.dout, "AUX PCM DOUT");
 	if (rc) {
-		MM_AUD_ERR("GPIO request for AUX PCM DOUT failed\n");
+		MM_ERR("GPIO request for AUX PCM DOUT failed\n");
 		return rc;
 	}
 
 	rc = gpio_request(the_aux_pcm_state.din, "AUX PCM DIN");
 	if (rc) {
-		MM_AUD_ERR("GPIO request for AUX PCM DIN failed\n");
+		MM_ERR("GPIO request for AUX PCM DIN failed\n");
 		gpio_free(the_aux_pcm_state.dout);
 		return rc;
 	}
 
 	rc = gpio_request(the_aux_pcm_state.syncout, "AUX PCM SYNC OUT");
 	if (rc) {
-		MM_AUD_ERR("GPIO request for AUX PCM SYNC OUT failed\n");
+		MM_ERR("GPIO request for AUX PCM SYNC OUT failed\n");
 		gpio_free(the_aux_pcm_state.dout);
 		gpio_free(the_aux_pcm_state.din);
 		return rc;
@@ -184,7 +145,7 @@ int aux_pcm_gpios_request(void)
 
 	rc = gpio_request(the_aux_pcm_state.clkin_a, "AUX PCM CLKIN A");
 	if (rc) {
-		MM_AUD_ERR("GPIO request for AUX PCM CLKIN A failed\n");
+		MM_ERR("GPIO request for AUX PCM CLKIN A failed\n");
 		gpio_free(the_aux_pcm_state.dout);
 		gpio_free(the_aux_pcm_state.din);
 		gpio_free(the_aux_pcm_state.syncout);
@@ -198,7 +159,7 @@ EXPORT_SYMBOL(aux_pcm_gpios_request);
 
 void aux_pcm_gpios_free(void)
 {
-	MM_AUD_INFO(" aux_pcm_gpios_free \n");
+	MM_DBG(" aux_pcm_gpios_free \n");
 
 	/*
 	 * Feed silence frames before close to prevent buzzing sound in BT at
@@ -228,7 +189,7 @@ static int get_aux_pcm_gpios(struct platform_device *pdev)
 	res = platform_get_resource_byname(pdev, IORESOURCE_IO,
 					"aux_pcm_dout");
 	if  (!res) {
-		MM_AUD_ERR("%s: failed to get gpio AUX PCM DOUT\n", __func__);
+		MM_ERR("%s: failed to get gpio AUX PCM DOUT\n", __func__);
 		return -ENODEV;
 	}
 
@@ -237,7 +198,7 @@ static int get_aux_pcm_gpios(struct platform_device *pdev)
 	res = platform_get_resource_byname(pdev, IORESOURCE_IO,
 					"aux_pcm_din");
 	if  (!res) {
-		MM_AUD_ERR("%s: failed to get gpio AUX PCM DIN\n", __func__);
+		MM_ERR("%s: failed to get gpio AUX PCM DIN\n", __func__);
 		return -ENODEV;
 	}
 
@@ -246,7 +207,7 @@ static int get_aux_pcm_gpios(struct platform_device *pdev)
 	res = platform_get_resource_byname(pdev, IORESOURCE_IO,
 					"aux_pcm_syncout");
 	if  (!res) {
-		MM_AUD_ERR("%s: failed to get gpio AUX PCM SYNC OUT\n", __func__);
+		MM_ERR("%s: failed to get gpio AUX PCM SYNC OUT\n", __func__);
 		return -ENODEV;
 	}
 
@@ -255,7 +216,7 @@ static int get_aux_pcm_gpios(struct platform_device *pdev)
 	res = platform_get_resource_byname(pdev, IORESOURCE_IO,
 					"aux_pcm_clkin_a");
 	if  (!res) {
-		MM_AUD_ERR("%s: failed to get gpio AUX PCM CLKIN A\n", __func__);
+		MM_ERR("%s: failed to get gpio AUX PCM CLKIN A\n", __func__);
 		return -ENODEV;
 	}
 
@@ -268,7 +229,7 @@ static int aux_pcm_probe(struct platform_device *pdev)
 	int rc = 0;
 	struct resource *mem_src;
 
-	MM_AUD_INFO("aux_pcm_probe \n");
+	MM_DBG("aux_pcm_probe \n");
 	mem_src = platform_get_resource_byname(pdev, IORESOURCE_MEM,
 						"aux_codec_reg_addr");
 	if (!mem_src) {
@@ -284,7 +245,7 @@ static int aux_pcm_probe(struct platform_device *pdev)
 	}
 	rc = get_aux_pcm_gpios(pdev);
 	if (rc) {
-		MM_AUD_ERR("GPIO configuration failed\n");
+		MM_ERR("GPIO configuration failed\n");
 		rc = -ENODEV;
 	}
 
@@ -322,4 +283,4 @@ module_init(aux_pcm_init);
 module_exit(aux_pcm_exit);
 
 MODULE_DESCRIPTION("MSM AUX PCM driver");
-MODULE_LICENSE("Dual BSD/GPL");
+MODULE_LICENSE("GPL v2");

@@ -20,7 +20,7 @@
 #include <linux/types.h>
 #include <linux/msm_adsp.h>
 #include <linux/platform_device.h>
-#include <mach/msm_adsp_1x.h>
+#include <mach/msm_adsp.h>
 #include <mach/dal.h>
 
 int adsp_pmem_fixup(struct msm_adsp_module *module, void **addr,

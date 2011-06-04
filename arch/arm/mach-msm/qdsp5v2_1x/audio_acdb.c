@@ -1,60 +1,21 @@
 /* Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Code Aurora Forum nor
- *       the names of its contributors may be used to endorse or promote
- *       products derived from this software without specific prior written
- *       permission.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
  *
- * Alternatively, provided that this notice is retained in full, this software
- * may be relicensed by the recipient under the terms of the GNU General Public
- * License version 2 ("GPL") and only version 2, in which case the provisions of
- * the GPL apply INSTEAD OF those given above.  If the recipient relicenses the
- * software under the GPL, then the identification text in the MODULE_LICENSE
- * macro must be changed to reflect "GPLv2" instead of "Dual BSD/GPL".  Once a
- * recipient changes the license terms to the GPL, subsequent recipients shall
- * not relicense under alternate licensing terms, including the BSD or dual
- * BSD/GPL terms.  In addition, the following license statement immediately
- * below and between the words START and END shall also then apply when this
- * software is relicensed under the GPL:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * START
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License version 2 and only version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * END
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
  *
  */
-#include <mach/debug_audio_mm.h>
+#include <mach/debug_mm.h>
 #include <linux/module.h>
 #include <linux/miscdevice.h>
 #include <linux/kthread.h>
@@ -180,30 +141,30 @@ static int htc_acdb_init(char *filename)
 	db = (void*) fw->data;
 
 	if (fw->size < sizeof(struct audio_config_database)) {
-		pr_aud_err("acdb: undersized database\n");
+		pr_err("acdb: undersized database\n");
 		goto fail;
 	}
 	if (strcmp(db->magic, "ACDB1.0")) {
-		pr_aud_err("acdb: invalid magic\n");
+		pr_err("acdb: invalid magic\n");
 		goto fail;
 	}
 	if (db->entry_count > 1024) {
-		pr_aud_err("acdb: too many entries\n");
+		pr_err("acdb: too many entries\n");
 		goto fail;
 	}
 	if (fw->size < (sizeof(struct audio_config_database) +
 			db->entry_count * sizeof(struct audio_config_data))) {
-		pr_aud_err("acdb: undersized TOC\n");
+		pr_err("acdb: undersized TOC\n");
 		goto fail;
 	}
 	for (n = 0; n < db->entry_count; n++) {
 		if (db->entry[n].length > 4096) {
-			pr_aud_err("acdb: entry %d too large (%d)\n",
+			pr_err("acdb: entry %d too large (%d)\n",
 			       n, db->entry[n].length);
 			goto fail;
 		}
 		if ((db->entry[n].offset + db->entry[n].length) > fw->size) {
-			pr_aud_err("acdb: entry %d outside of data\n", n);
+			pr_err("acdb: entry %d outside of data\n", n);
 			goto fail;
 		}
 	}
@@ -254,12 +215,12 @@ static int acdb_get_config_table(uint32_t device_id, uint32_t sample_rate)
 		break;
 	}
 		if (n == db->entry_count) {
-		pr_aud_err("acdb: no entry for device %d, rate %d.\n",
+		pr_err("acdb: no entry for device %d, rate %d.\n",
 		       device_id, sample_rate);
 		return 0;
 	}
 
-	pr_aud_info("acdb: %d bytes for device %d, rate %d.\n",
+	pr_info("acdb: %d bytes for device %d, rate %d.\n",
 		db->entry[n].length, device_id, sample_rate);
 
 	memcpy(audio_data, htc_acdb_data + db->entry[n].offset, db->entry[n].length);
@@ -283,7 +244,7 @@ static int __init acdb_init(void)
 		NULL, "acdb_cb_thread");
 
 	if (IS_ERR(acdb_data.cb_thread_task)) {
-		MM_AUD_ERR("ACDB=> Could not register cb thread\n");
+		MM_ERR("ACDB=> Could not register cb thread\n");
 		result = -ENODEV;
 		goto err;
 	}
@@ -317,8 +278,7 @@ s32 acdb_calibrate_device(void *data)
 		result = acdb_get_calibration();
 		if (result < 0) {
 			mutex_unlock(&acdb_data.acdb_mutex);
-			MM_AUD_ERR("Not able to get calibration data,\
-					continue\n");
+			MM_ERR("Not able to get calibration data, continue\n");
 			continue;
 		}
 		if (!((acdb_data.device_info->dev_type == RX_DEVICE)
@@ -376,15 +336,15 @@ s32 acdb_initialize_data(void)
 err4:
 	result = audpreproc_unregister_event_callback(&acdb_data.audpreproc_cb);
 	if (result)
-		MM_AUD_ERR("ACDB=> Could not unregister audpreproc callback\n");
+		MM_ERR("ACDB=> Could not unregister audpreproc callback\n");
 err3:
 	result = audpp_unregister_event_callback(&acdb_data.audpp_cb);
 	if (result)
-		MM_AUD_ERR("ACDB=> Could not unregister audpp callback\n");
+		MM_ERR("ACDB=> Could not unregister audpp callback\n");
 err2:
 	result = auddev_unregister_evt_listner(AUDDEV_CLNT_AUDIOCAL, 0);
 	if (result)
-		MM_AUD_ERR("ACDB=> Could not unregister device callback\n");
+		MM_ERR("ACDB=> Could not unregister device callback\n");
 err1:
 	daldevice_detach(acdb_data.handle);
 	acdb_data.handle = NULL;
@@ -401,7 +361,7 @@ s32 initialize_rpc(void)
 			ACDB_CPU, &acdb_data.handle);
 
 	if (result) {
-		MM_AUD_ERR("ACDB=> Device Attach failed\n");
+		MM_ERR("ACDB=> Device Attach failed\n");
 		result = -ENODEV;
 		goto done;
 	}
@@ -420,18 +380,15 @@ s32 initialize_memory(void)
 				 &acdb_data.phys_addr, GFP_KERNEL);
 
 	if (acdb_data.virt_addr == NULL) {
-		MM_AUD_ERR("ACDB=> Could not allocate acdb buffer\n");
-		result = -ENOMEM;
-		goto done;
+	        MM_ERR("ACDB=> Could not allocate acdb buffer\n");
+	        result = -ENOMEM;
+	        goto done;
 	}
-
-	memset(acdb_data.virt_addr, 0, sizeof(*acdb_data.virt_addr));
 
 	acdb_data.device_info = kmalloc(sizeof(*acdb_data.device_info),
 		GFP_KERNEL);
 	if (acdb_data.device_info == NULL) {
-		MM_AUD_ERR("ACDB=> Could not allocate device\
-				controller memory\n");
+		MM_ERR("ACDB=> Could not allocate device controller memory\n");
 		result = -ENOMEM;
 		goto done;
 	}
@@ -439,15 +396,14 @@ s32 initialize_memory(void)
 	acdb_data.pp_iir = kmalloc(sizeof(*acdb_data.pp_iir),
 		GFP_KERNEL);
 	if (acdb_data.pp_iir == NULL) {
-		MM_AUD_ERR("ACDB=> Could not allocate postproc iir memory\n");
+		MM_ERR("ACDB=> Could not allocate postproc iir memory\n");
 		result = -ENOMEM;
 		goto done;
 	}
 
 	acdb_data.pp_mbadrc = kmalloc(sizeof(*acdb_data.pp_mbadrc), GFP_KERNEL);
 	if (acdb_data.pp_mbadrc == NULL) {
-		MM_AUD_ERR("ACDB=> Could not allocate postproc\
-				mbadrc memory\n");
+		MM_ERR("ACDB=> Could not allocate postproc mbadrc memory\n");
 		result = -ENOMEM;
 		goto done;
 	}
@@ -455,7 +411,7 @@ s32 initialize_memory(void)
 	acdb_data.preproc_agc = kmalloc(sizeof(*acdb_data.preproc_agc),
 						GFP_KERNEL);
 	if (acdb_data.preproc_agc == NULL) {
-		MM_AUD_ERR("ACDB=> Could not allocate preproc agc memory\n");
+		MM_ERR("ACDB=> Could not allocate preproc agc memory\n");
 		result = -ENOMEM;
 		goto done;
 	}
@@ -463,7 +419,7 @@ s32 initialize_memory(void)
 	acdb_data.preproc_iir = kmalloc(sizeof(*acdb_data.preproc_iir),
 		GFP_KERNEL);
 	if (acdb_data.preproc_iir == NULL) {
-		MM_AUD_ERR("ACDB=> Could not allocate preproc iir memory\n");
+		MM_ERR("ACDB=> Could not allocate preproc iir memory\n");
 		result = -ENOMEM;
 		goto done;
 	}
@@ -480,7 +436,7 @@ s32 register_device_cb(void)
 		AUDDEV_CLNT_AUDIOCAL, 0, device_cb, (void *)&acdb_data);
 
 	if (result) {
-		MM_AUD_ERR("ACDB=> Could not register device callback\n");
+		MM_ERR("ACDB=> Could not register device callback\n");
 		result = -ENODEV;
 		goto done;
 	}
@@ -496,7 +452,7 @@ s32 register_audpp_cb(void)
 	acdb_data.audpp_cb.private = NULL;
 	result = audpp_register_event_callback(&acdb_data.audpp_cb);
 	if (result) {
-		MM_AUD_ERR("ACDB=> Could not register audpp callback\n");
+		MM_ERR("ACDB=> Could not register audpp callback\n");
 		result = -ENODEV;
 		goto done;
 	}
@@ -512,7 +468,7 @@ s32 register_audpreproc_cb(void)
 	acdb_data.audpreproc_cb.private = NULL;
 	result = audpreproc_register_event_callback(&acdb_data.audpreproc_cb);
 	if (result) {
-		MM_AUD_ERR("ACDB=> Could not register audpreproc callback\n");
+		MM_ERR("ACDB=> Could not register audpreproc callback\n");
 		result = -ENODEV;
 		goto done;
 	}
@@ -582,7 +538,7 @@ s32 acdb_get_calibration(void)
 					sizeof(acdb_data.acdb_result));
 
 			if (result < 0) {
-				MM_AUD_ERR("ACDB=> Device table RPC failure"
+				MM_ERR("ACDB=> Device table RPC failure"
 					" result = %d\n", result);
 				result = -EINVAL;
 				goto done;
@@ -601,13 +557,12 @@ s32 acdb_get_calibration(void)
 					" (iterations = %d)\n", iterations);
 				acdb_data.acdb_state |= CAL_DATA_READY;
 				acdb_data.enable = 1;
-				pr_aud_info("%d: change acdb_State to %d\n",
-						__LINE__,acdb_data.acdb_state);
+				pr_info("%d: change acdb_State to %d\n", __LINE__,
+					acdb_data.acdb_state);
 				goto done;
 			} else {
-				MM_AUD_ERR("ACDB=> modem failed"
-						"to fill acdb values,"
-						" reuslt = %d, (iterations = %d)\n",
+				MM_ERR("ACDB=> modem failed to fill acdb values,"
+					" reuslt = %d, (iterations = %d)\n",
 					acdb_data.acdb_result.result,
 					iterations);
 				result = -EINVAL;
@@ -615,7 +570,7 @@ s32 acdb_get_calibration(void)
 			}
 		} while (iterations < MAX_RETRY);
 
-		MM_AUD_ERR("ACDB=> AUDCAL SW on modem is not"
+		MM_ERR("ACDB=> AUDCAL SW on modem is not"
 			" in initialized state (%d)\n",
 			acdb_data.acdb_result.result);
 		result = -EINVAL;
@@ -708,7 +663,7 @@ s32 acdb_calibrate_audpp(void)
 				acdb_data.pp_iir->active_flag,
 					acdb_data.pp_iir, COPP);
 	if (result) {
-		MM_AUD_ERR("ACDB=> Failed to send IIR data to postproc\n");
+		MM_ERR("ACDB=> Failed to send IIR data to postproc\n");
 		result = -EINVAL;
 		goto done;
 		} else
@@ -722,7 +677,7 @@ s32 acdb_calibrate_audpp(void)
 					acdb_data.pp_mbadrc->enable,
 					acdb_data.pp_mbadrc, COPP);
 	if (result) {
-			MM_AUD_ERR("ACDB=> Failed to send MBADRC data to"
+			MM_ERR("ACDB=> Failed to send MBADRC data to"
 					" postproc\n");
 		result = -EINVAL;
 		goto done;
@@ -735,7 +690,7 @@ done:
 	return result;
 }
 
-struct acdb_iir_block *get_audpp_irr_block()
+struct acdb_iir_block *get_audpp_irr_block(void)
 {
 	struct header *prs_hdr;
 	u32 index = 0;
@@ -767,7 +722,7 @@ s32 acdb_fill_audpp_iir(void)
 
 	acdb_iir = get_audpp_irr_block();
 	if (acdb_iir == NULL) {
-		MM_AUD_ERR("unable to find  audpp iir block returning\n");
+		MM_ERR("unable to find  audpp iir block returning\n");
 		return -1;
 	}
 	memset(acdb_data.pp_iir, 0, sizeof(*acdb_data.pp_iir));
@@ -861,8 +816,8 @@ void get_aupp_mbadrc_block(u32 *phy_addr)
 						if (acdb_data. \
 							mbadrc_block.parameters\
 							.mbadrc_num_bands > mbadrc_num_bands) {
-							MM_AUD_ERR("mbadrc bands \
-							number too much.");
+							MM_ERR("mbadrc bands number\
+								too much.");
 							return;
 						}
 						memcpy(acdb_data. \
@@ -924,7 +879,7 @@ s32 acdb_fill_audpp_mbadrc(void)
 	get_aupp_mbadrc_block(&mbadrc_phys_addr);
 
 	if (IS_ERR_VALUE(mbadrc_phys_addr)) {
-		MM_AUD_ERR("failed to get mbadrc block\n");
+		MM_ERR("failed to get mbadrc block\n");
 		return -1;
 	}
 
@@ -959,7 +914,7 @@ s32 acdb_fill_audpp_mbadrc(void)
 	acdb_data.pp_mbadrc->ext_buf_msw = (u16)((mbadrc_phys_addr\
 						 & 0xFFFF0000) >> 16);
 	if (acdb_data.mbadrc_block.parameters.mbadrc_num_bands > mbadrc_num_bands) {
-		MM_AUD_ERR("mbadrc bands number too much.");
+		MM_ERR("mbadrc bands number too much.");
 		return -1;
 	}
 	memcpy(acdb_data.pp_mbadrc->adrc_band, acdb_data.mbadrc_block.\
@@ -979,7 +934,7 @@ s32 acdb_calibrate_audpreproc(void)
 	result = audpreproc_dsp_set_agc(acdb_data.preproc_agc, sizeof(
 					struct audpreproc_cmd_cfg_agc_params));
 	if (result) {
-		MM_AUD_ERR("ACDB=> Failed to send AGC data to preproc)\n");
+		MM_ERR("ACDB=> Failed to send AGC data to preproc)\n");
 		result = -EINVAL;
 		goto done;
 		} else
@@ -994,7 +949,7 @@ s32 acdb_calibrate_audpreproc(void)
 				sizeof(struct\
 				audpreproc_cmd_cfg_iir_tuning_filter_params));
 	if (result) {
-		MM_AUD_ERR("ACDB=> Failed to send IIR data to preproc\n");
+		MM_ERR("ACDB=> Failed to send IIR data to preproc\n");
 		result = -EINVAL;
 		goto done;
 		} else
@@ -1007,7 +962,7 @@ done:
 	return result;
 }
 
-struct acdb_agc_block *get_audpreproc_agc_block()
+struct acdb_agc_block *get_audpreproc_agc_block(void)
 {
 	struct header *prs_hdr;
 	u32 index = 0;
@@ -1102,7 +1057,7 @@ s32 acdb_fill_audpreproc_agc(void)
 	return 0;
 }
 
-struct acdb_iir_block *get_audpreproc_irr_block()
+struct acdb_iir_block *get_audpreproc_irr_block(void)
 {
 
 	struct header *prs_hdr;
@@ -1260,20 +1215,20 @@ static void __exit acdb_exit(void)
 
 	result = auddev_unregister_evt_listner(AUDDEV_CLNT_AUDIOCAL, 0);
 	if (result)
-		MM_AUD_ERR("ACDB=> Could not unregister device callback\n");
+		MM_ERR("ACDB=> Could not unregister device callback\n");
 
 	result = audpp_unregister_event_callback(&acdb_data.audpp_cb);
 	if (result)
-		MM_AUD_ERR("ACDB=> Could not unregister audpp callback\n");
+		MM_ERR("ACDB=> Could not unregister audpp callback\n");
 
 	result = audpreproc_unregister_event_callback(&acdb_data.\
 				audpreproc_cb);
 	if (result)
-		MM_AUD_ERR("ACDB=> Could not unregister audpreproc callback\n");
+		MM_ERR("ACDB=> Could not unregister audpreproc callback\n");
 
 	result = kthread_stop(acdb_data.cb_thread_task);
 	if (result)
-		MM_AUD_ERR("ACDB=> Could not stop kthread\n");
+		MM_ERR("ACDB=> Could not stop kthread\n");
 
 	if (acdb_data.phys_addr)
 		pmem_kfree(acdb_data.phys_addr);

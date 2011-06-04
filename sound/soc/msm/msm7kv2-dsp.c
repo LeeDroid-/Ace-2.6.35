@@ -28,7 +28,7 @@
 #include <sound/initval.h>
 #include <asm/dma.h>
 #include <linux/dma-mapping.h>
-#include <mach/qdsp5v2/audio_dev_ctl.h>
+#include <mach/qdsp5v2_1x/audio_dev_ctl.h>
 #include <mach/debug_mm.h>
 
 #include "msm7kv2-pcm.h"
@@ -424,18 +424,6 @@ int alsa_in_record_config(struct msm_audio *prtd, int enable)
 	else
 		cmd.destination_activity = AUDIO_RECORDING_TURN_OFF;
 	cmd.source_mix_mask = prtd->source;
-	if (prtd->session_id == 2) {
-		if ((cmd.source_mix_mask &
-			INTERNAL_CODEC_TX_SOURCE_MIX_MASK) ||
-			(cmd.source_mix_mask & AUX_CODEC_TX_SOURCE_MIX_MASK) ||
-			(cmd.source_mix_mask & VOICE_UL_SOURCE_MIX_MASK) ||
-			(cmd.source_mix_mask & VOICE_DL_SOURCE_MIX_MASK)) {
-			cmd.pipe_id = SOURCE_PIPE_1;
-		}
-		if (cmd.source_mix_mask &
-			AUDPP_A2DP_PIPE_SOURCE_MIX_MASK)
-			cmd.pipe_id |= SOURCE_PIPE_0;
-	}
 	for (i = 0; i < sizeof(cmd)/2; i++, ++ptrmem)
 		MM_DBG("cmd[%d]=0x%04x\n", i, *ptrmem);
 	return audpreproc_send_audreccmdqueue(&cmd, sizeof(cmd));

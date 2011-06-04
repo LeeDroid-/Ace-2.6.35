@@ -1,60 +1,20 @@
 /* Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Code Aurora Forum nor
- *       the names of its contributors may be used to endorse or promote
- *       products derived from this software without specific prior written
- *       permission.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
  *
- * Alternatively, provided that this notice is retained in full, this software
- * may be relicensed by the recipient under the terms of the GNU General Public
- * License version 2 ("GPL") and only version 2, in which case the provisions of
- * the GPL apply INSTEAD OF those given above.  If the recipient relicenses the
- * software under the GPL, then the identification text in the MODULE_LICENSE
- * macro must be changed to reflect "GPLv2" instead of "Dual BSD/GPL".  Once a
- * recipient changes the license terms to the GPL, subsequent recipients shall
- * not relicense under alternate licensing terms, including the BSD or dual
- * BSD/GPL terms.  In addition, the following license statement immediately
- * below and between the words START and END shall also then apply when this
- * software is relicensed under the GPL:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * START
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License version 2 and only version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * END
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
  *
  */
-#include <mach/debug_audio_mm.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/platform_device.h>
@@ -65,6 +25,7 @@
 #include <mach/qdsp5v2_1x/lpa.h>
 #include <mach/qdsp5v2_1x/lpa_hw.h>
 #include <mach/qdsp5v2_1x/msm_lpa.h>
+#include <mach/debug_mm.h>
 
 #define LPA_REG_WRITEL(drv, val, reg)  writel(val, drv->baseaddr + reg)
 #define LPA_REG_READL(drv, reg)  readl(drv->baseaddr + reg)
@@ -113,7 +74,7 @@ static void lpa_reset(struct lpa_drv *lpa)
 	/* Need to make sure not disable clock while other device is enabled */
 	adsp_clk = clk_get(NULL, "adsp_clk");
 	if (!adsp_clk) {
-		MM_AUD_ERR("failed to get adsp clk\n");
+		MM_ERR("failed to get adsp clk\n");
 		goto error;
 	}
 	clk_enable(adsp_clk);
@@ -327,7 +288,7 @@ struct lpa_drv *lpa_get(void)
 
 	mutex_lock(&the_lpa_state.lpa_lock);
 	if (the_lpa_state.assigned) {
-		MM_AUD_ERR("LPA HW accupied\n");
+		MM_ERR("LPA HW accupied\n");
 		ret_lpa = ERR_PTR(-EBUSY);
 		goto error;
 	}
@@ -395,7 +356,7 @@ void lpa_put(struct lpa_drv *lpa)
 
 	mutex_lock(&the_lpa_state.lpa_lock);
 	if (!lpa || &the_lpa_state.lpa_drv != lpa) {
-		MM_AUD_ERR("invalid arg\n");
+		MM_ERR("invalid arg\n");
 		goto error;
 	}
 	/* Deinitialize */
@@ -414,7 +375,7 @@ int lpa_cmd_codec_config(struct lpa_drv *lpa,
 	u32 val = 0;
 
 	if (!lpa || !config_ptr) {
-		MM_AUD_ERR("invalid parameters\n");
+		MM_ERR("invalid parameters\n");
 		return -EINVAL;
 	}
 
@@ -435,7 +396,7 @@ int lpa_cmd_codec_config(struct lpa_drv *lpa,
 		num_channels = LPA_NUM_CHAN_MONO;
 		break;
 	default:
-		MM_AUD_ERR("unsupported number of channel\n");
+		MM_ERR("unsupported number of channel\n");
 		goto error;
 	}
 	val |= (num_channels << LPA_OBUF_CODEC_NUM_CHAN_SHFT) &
@@ -470,7 +431,7 @@ int lpa_cmd_codec_config(struct lpa_drv *lpa,
 		sample_rate = LPA_SAMPLE_RATE_8KHZ;
 		break;
 	default:
-		MM_AUD_ERR("unsupported sample rate \n");
+		MM_ERR("unsupported sample rate \n");
 		goto error;
 	}
 	val |= (sample_rate << LPA_OBUF_CODEC_SAMP_SHFT) &
@@ -486,7 +447,7 @@ int lpa_cmd_codec_config(struct lpa_drv *lpa,
 		width = LPA_BITS_PER_CHAN_16BITS;
 		break;
 	default:
-		MM_AUD_ERR("unsupported sample width \n");
+		MM_ERR("unsupported sample width \n");
 		goto error;
 	}
 	val |= (width << LPA_OBUF_CODEC_BITS_PER_CHAN_SHFT) &
@@ -531,7 +492,7 @@ int lpa_cmd_enable_codec(struct lpa_drv *lpa, bool enable)
 	u32 val;
 	struct lpa_mem_bank_select mem_bank;
 
-	MM_AUD_INFO(" %s\n", (enable ? "enable" : "disable"));
+	MM_DBG(" %s\n", (enable ? "enable" : "disable"));
 
 	if (!lpa)
 		return -EINVAL;
@@ -560,13 +521,13 @@ int lpa_cmd_enable_codec(struct lpa_drv *lpa, bool enable)
 		lpa_clear_llb(lpa);
 
 		lpa_enable_codec(lpa, 1);
-		MM_AUD_INFO("LPA codec is enabled\n");
+		MM_DBG("LPA codec is enabled\n");
 	} else {
 		if (val & LPA_OBUF_CODEC_CODEC_INTF_EN_BMSK) {
 			lpa_enable_codec(lpa, 0);
-			MM_AUD_INFO("LPA codec is disabled\n");
+			MM_DBG("LPA codec is disabled\n");
 		} else
-			MM_AUD_ERR("LPA codec is already disable\n");
+			MM_ERR("LPA codec is already disable\n");
 	}
 	return 0;
 }
@@ -578,17 +539,17 @@ static int lpa_probe(struct platform_device *pdev)
 	struct resource *mem_src;
 	struct msm_lpa_platform_data *pdata;
 
-	MM_AUD_INFO("lpa probe\n");
+	MM_INFO("lpa probe\n");
 
 	if (!pdev || !pdev->dev.platform_data) {
-		MM_AUD_ERR("no plaform data\n");
+		MM_ERR("no plaform data\n");
 		rc = -ENODEV;
 		goto error;
 	}
 
 	mem_src = platform_get_resource_byname(pdev, IORESOURCE_MEM, "lpa");
 	if (!mem_src) {
-		MM_AUD_ERR("LPA base address undefined\n");
+		MM_ERR("LPA base address undefined\n");
 		rc = -ENODEV;
 		goto error;
 	}
@@ -645,4 +606,4 @@ module_init(lpa_init);
 module_exit(lpa_exit);
 
 MODULE_DESCRIPTION("MSM LPA driver");
-MODULE_LICENSE("Dual BSD/GPL");
+MODULE_LICENSE("GPL v2");

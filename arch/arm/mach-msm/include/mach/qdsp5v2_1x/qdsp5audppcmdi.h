@@ -15,7 +15,7 @@ REFERENCES
 EXTERNALIZED FUNCTIONS
   None
 
-Copyright (c) 1992-2009, Code Aurora Forum. All rights reserved.
+Copyright(c) 1992-2010, Code Aurora Forum. All rights reserved.
 
 This software is licensed under the terms of the GNU General Public
 License version 2, as published by the Free Software Foundation, and
@@ -653,6 +653,15 @@ struct audpp_cmd_cfg_object_params_pcm {
 	} __attribute__((packed)) params_filter;
 } __attribute__((packed));
 
+#define AUDPP_CMD_CFG_CAL_GAIN_LEN sizeof(struct audpp_cmd_cfg_cal_gain)
+
+
+struct audpp_cmd_cfg_cal_gain {
+	struct audpp_cmd_cfg_object_params_common common;
+	unsigned short audppcalgain;
+	unsigned short reserved;
+} __attribute__((packed));
+
 
 /*
  * Command Structure to configure post processing parameters (equalizer)
@@ -784,6 +793,8 @@ struct audpp_cmd_cfg_object_params_eqalizer {
 
 #define AUDPP_CMD_ADRC_FLAG_DIS		0x0000
 #define AUDPP_CMD_ADRC_FLAG_ENA		-1
+#define AUDPP_CMD_PBE_FLAG_DIS		0x0000
+#define AUDPP_CMD_PBE_FLAG_ENA		-1
 
 struct audpp_cmd_cfg_object_params_adrc {
 	struct audpp_cmd_cfg_object_params_common 	common;
@@ -1006,6 +1017,43 @@ struct audpp_cmd_reverb_config_env_15 {
 	struct audpp_cmd_reverb_config_common	common;
 	unsigned short			object_num;
 	unsigned short			absolute_gain;
+} __attribute__((packed));
+
+#define AUDPP_CMD_CFG_PBE_LEN sizeof(struct audpp_cmd_cfg_pbe)
+
+struct audpp_cmd_cfg_pbe {
+	struct audpp_cmd_cfg_object_params_common       common;
+	unsigned short pbe_enable;
+	signed short   realbassmix;
+	signed short   basscolorcontrol;
+	unsigned short mainchaindelay;
+	unsigned short xoverfltorder;
+	unsigned short bandpassfltorder;
+	signed short   adrcdelay;
+	unsigned short downsamplelevel;
+	unsigned short comprmstav;
+	signed short   expthreshold;
+	unsigned short expslope;
+	unsigned short compthreshold;
+	unsigned short compslope;
+	unsigned short cpmpattack_lsw;
+	unsigned short compattack_msw;
+	unsigned short comprelease_lsw;
+	unsigned short comprelease_msw;
+	unsigned short compmakeupgain;
+	signed short   baselimthreshold;
+	signed short   highlimthreshold;
+	signed short   basslimmakeupgain;
+	signed short   highlimmakeupgain;
+	signed short   limbassgrc;
+	signed short   limhighgrc;
+	signed short   limdelay;
+	unsigned short filter_coeffs[90];
+	unsigned short extbuffsize_lsw;
+	unsigned short extbuffsize_msw;
+	unsigned short extpartition;
+	unsigned short extbuffstart_lsw;
+	unsigned short extbuffstart_msw;
 } __attribute__((packed));
 
 #endif /* __MACH_QDSP5_V2_QDSP5AUDPPCMDI_H */

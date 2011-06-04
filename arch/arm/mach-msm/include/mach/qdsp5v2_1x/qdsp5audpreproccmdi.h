@@ -1,28 +1,29 @@
-/* Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * modification, are permitted provided that the following conditions are
+ * met:
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Code Aurora nor
- *       the names of its contributors may be used to endorse or promote
- *       products derived from this software without specific prior written
- *       permission.
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *     * Neither the name of Code Aurora Forum, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NON-INFRINGEMENT ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
 
@@ -119,14 +120,20 @@ struct audpreproc_audrec_cmd_parm_cfg_aac {
 
 /* encoder parameters mask definitions*/
 
+#define AUDREC_SBC_ENC_PARAM_VER_MASK				0x000A
 #define AUDREC_SBC_ENC_PARAM_ENAHANCED_SBC_BASELINE_VERSION	0x0000
 #define AUDREC_SBC_ENC_PARAM_ENAHANCED_SBC_NA_MASK		0x0400
+#define AUDREC_SBC_ENC_PARAM_BIT_ALLOC_MASK			0x0008
 #define AUDREC_SBC_ENC_PARAM_SNR_MASK				0x0100
+#define AUDREC_SBC_ENC_PARAM_MODE_MASK				0x0006
 #define AUDREC_SBC_ENC_PARAM_MODE_DUAL_MASK			0x0040
 #define AUDREC_SBC_ENC_PARAM_MODE_STEREO_MASK			0x0080
 #define AUDREC_SBC_ENC_PARAM_MODE_JOINT_STEREO_MASK		0x00C0
-#define AUDREC_SBC_ENC_PARAM_NUM_SUB_BANDS_MASK			0x0010
+#define AUDREC_SBC_ENC_PARAM_NUM_SUB_BANDS_MASK 		0x0004
 #define AUDREC_SBC_ENC_PARAM_NUM_SUB_BANDS_8_MASK		0x0001
+#define AUDREC_SBC_ENC_PARAM_NUM_SUB_BLOCKS_MASK		0x0000
+#define AUDREC_SBC_ENC_PARAM_NUM_SUB_BLOCKS_4_MASK		0x0000
+#define AUDREC_SBC_ENC_PARAM_NUM_SUB_BLOCKS_8_MASK		0x0001
 #define AUDREC_SBC_ENC_PARAM_NUM_SUB_BLOCKS_12_MASK		0x0002
 #define AUDREC_SBC_ENC_PARAM_NUM_SUB_BLOCKS_16_MASK		0x0003
 
@@ -218,7 +225,24 @@ struct audpreproc_afe_cmd_audio_record_cfg {
 	unsigned short stream_id;
 	unsigned short destination_activity;
 	unsigned short source_mix_mask;
-	unsigned short reserved[2];
+	unsigned short pipe_id;
+	unsigned short reserved;
+} __attribute__((packed));
+
+/*
+ * Command to configure Tunnel(RT) or Non-Tunnel(FTRT) mode
+ */
+#define AUDPREPROC_AUDREC_CMD_ROUTING_MODE 0x0003
+#define	AUDPREPROC_AUDREC_CMD_ROUTING_MODE_LEN	\
+	sizeof(struct audpreproc_audrec_cmd_routing_mode)
+
+#define AUDIO_ROUTING_MODE_FTRT		0x0001
+#define AUDIO_ROUTING_MODE_RT		0x0002
+
+struct audpreproc_audrec_cmd_routing_mode {
+	unsigned short cmd_id;
+	unsigned short stream_id;
+	unsigned short routing_mode;
 } __attribute__((packed));
 
 /*
@@ -446,5 +470,20 @@ struct audpreproc_cmd_cfg_iir_tuning_filter_params {
 	unsigned short	pan_of_filter2;
 	unsigned short	pan_of_filter3;
 } __attribute__((packed));
+
+/*
+ * Command to configure parameters for calibration gain rx
+ */
+
+#define AUDPREPROC_CMD_CFG_CAL_GAIN_PARAMS 0x0004
+#define AUDPREPROC_CMD_CFG_CAL_GAIN_LEN    \
+	sizeof(struct audpreproc_cmd_cfg_cal_gain)
+
+struct audpreproc_cmd_cfg_cal_gain {
+	unsigned short  cmd_id;
+	unsigned short  stream_id;
+	unsigned short  audprecalgain;
+	unsigned short  reserved;
+}  __attribute__((packed));
 
 #endif /* QDSP5AUDPREPROCCMDI_H */

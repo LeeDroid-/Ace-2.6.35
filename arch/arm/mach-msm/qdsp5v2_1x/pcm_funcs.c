@@ -27,7 +27,7 @@
 #include <mach/qdsp5v2_1x/audpp.h>
 #include <mach/qdsp5v2_1x/codec_utils.h>
 #include <mach/qdsp5v2_1x/pcm_funcs.h>
-#include <mach/debug_audio_mm.h>
+#include <mach/debug_mm.h>
 
 long pcm_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {

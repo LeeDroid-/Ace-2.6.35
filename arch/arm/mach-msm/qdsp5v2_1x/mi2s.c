@@ -1,57 +1,18 @@
 /* Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Code Aurora Forum nor
- *       the names of its contributors may be used to endorse or promote
- *       products derived from this software without specific prior written
- *       permission.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
  *
- * Alternatively, provided that this notice is retained in full, this software
- * may be relicensed by the recipient under the terms of the GNU General Public
- * License version 2 ("GPL") and only version 2, in which case the provisions of
- * the GPL apply INSTEAD OF those given above.  If the recipient relicenses the
- * software under the GPL, then the identification text in the MODULE_LICENSE
- * macro must be changed to reflect "GPLv2" instead of "Dual BSD/GPL".  Once a
- * recipient changes the license terms to the GPL, subsequent recipients shall
- * not relicense under alternate licensing terms, including the BSD or dual
- * BSD/GPL terms.  In addition, the following license statement immediately
- * below and between the words START and END shall also then apply when this
- * software is relicensed under the GPL:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * START
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License version 2 and only version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * END
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
  *
  */
 
@@ -60,7 +21,9 @@
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/err.h>
+
 #include <mach/qdsp5v2_1x/mi2s.h>
+#include <mach/qdsp5v2_1x/audio_dev_ctl.h>
 
 #define DEBUG
 #ifdef DEBUG
@@ -372,7 +335,7 @@ static void mi2s_set_output_clk_synch(struct mi2s_state *mi2s, uint8_t dev_id)
 	}
 }
 
-/*static void mi2s_set_input_sd_line(struct mi2s_state *mi2s, uint8_t dev_id,
+static void mi2s_set_input_sd_line(struct mi2s_state *mi2s, uint8_t dev_id,
 	uint8_t sd_line)
 {
 	void __iomem *baddr = get_base_addr(mi2s, dev_id);
@@ -388,7 +351,7 @@ static void mi2s_set_output_clk_synch(struct mi2s_state *mi2s, uint8_t dev_id)
 			writel(val, baddr + MI2S_RX_MODE_OFFSET);
 		}
 	}
-}*/
+}
 
 static void mi2s_set_input_num_channels(struct mi2s_state *mi2s, uint8_t dev_id,
 	uint8_t channels)
@@ -415,7 +378,18 @@ static void mi2s_set_input_num_channels(struct mi2s_state *mi2s, uint8_t dev_id,
 			(MI2S_RX_MODE__MI2S_RX_CODEC_16_MONO_MODE__PACKED <<
 			HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_CODEC_P_MONO_SHFT));
 		} else if (channels == MI2S_CHAN_STEREO) {
-			val = (val &
+
+			if (dev_id == HDMI)
+				val = (val &
+			~(HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_STEREO_MODE_BMSK |
+			HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_CH_TYPE_BMSK)) |
+			((MI2S_RX_MODE__MI2S_RX_STEREO_MODE__STEREO_SAMPLE <<
+			HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_STEREO_MODE_SHFT) |
+			(MI2S_RX_MODE__MI2S_RX_CH_TYPE__2_CH <<
+			HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_CH_TYPE_SHFT));
+
+			else
+				val = (val &
 			~(HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_STEREO_MODE_BMSK |
 			HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_CH_TYPE_BMSK)) |
 			((MI2S_RX_MODE__MI2S_RX_STEREO_MODE__STEREO_SAMPLE <<
@@ -424,6 +398,8 @@ static void mi2s_set_input_num_channels(struct mi2s_state *mi2s, uint8_t dev_id,
 			HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_CODEC_P_MONO_SHFT) |
 			(MI2S_RX_MODE__MI2S_RX_CH_TYPE__2_CH <<
 			HWIO_AUDIO1_MI2S_RX_MODE_MI2S_RX_CH_TYPE_SHFT));
+
+
 		}
 		writel(val, baddr + MI2S_RX_MODE_OFFSET);
 	}
@@ -444,10 +420,48 @@ static void mi2s_set_input_clk_synch(struct mi2s_state *mi2s, uint8_t dev_id)
 	}
 }
 
-bool mi2s_set_hdmi_output_path(uint8_t channels, uint8_t size, uint8_t sd_line)
+
+static u8 num_of_bits_set(u8 sd_line_mask)
+{
+	u8 num_bits_set = 0;
+
+	while (sd_line_mask) {
+
+		if (sd_line_mask & 1)
+			num_bits_set++;
+		sd_line_mask = sd_line_mask >> 1;
+	}
+	return num_bits_set;
+}
+
+
+bool mi2s_set_hdmi_output_path(uint8_t channels, uint8_t size,
+		uint8_t sd_line_mask)
 {
 	bool ret_val = MI2S_TRUE;
 	struct mi2s_state *mi2s = &the_mi2s_state;
+	u8 sd_line, num_of_sd_lines = 0;
+	void __iomem *baddr;
+	uint32_t val;
+
+	pr_debug("%s: channels = %u size = %u sd_line_mask = 0x%x\n", __func__,
+		channels, size, sd_line_mask);
+
+	if ((channels == 0) ||  (channels > MAX_NUM_CHANNELS_OUT) ||
+		((channels != 1) && (channels % 2 != 0))) {
+
+		pr_err("%s: invalid number of channels. channels = %u\n",
+				__func__, channels);
+		return  MI2S_FALSE;
+	}
+
+	sd_line_mask &=  MI2S_SD_LINE_MASK;
+
+	if (!sd_line_mask) {
+		pr_err("%s: Did not set any data lines to use "
+			" sd_line_mask =0x%x\n", __func__, sd_line_mask);
+		return  MI2S_FALSE;
+	}
 
 	mutex_lock(&mi2s->mutex_lock);
 	/* Put device in reset */
@@ -464,65 +478,156 @@ bool mi2s_set_hdmi_output_path(uint8_t channels, uint8_t size, uint8_t sd_line)
 	/* Enable clock crossing synchronization of RD DMA ACK */
 	mi2s_set_output_clk_synch(mi2s, HDMI);
 
-	/* Ensure channels parameter is valid (non-zero),
-	 * less than max, and even or mono)
-	 */
+	mi2s_set_output_num_channels(mi2s, HDMI, channels);
 
-	if ((channels > 0) && (channels <= MAX_NUM_CHANNELS_OUT) &&
-		((channels == 1) || (channels % 2 == 0)))
-		mi2s_set_output_num_channels(mi2s, HDMI, channels);
-	else
-		ret_val = MI2S_FALSE;
+	num_of_sd_lines = num_of_bits_set(sd_line_mask);
 
-	/* Ensure sd_line parameter is valid (0-max) */
-	if (sd_line < MAX_SD_LINES) {
-		if (channels == 1) {
-			/* Enable SD line 0 for Tx (only option for
+	sd_line = find_first_bit((unsigned long *)&sd_line_mask,
+			sizeof(sd_line_mask));
+
+	if (channels == 1) {
+
+		if (num_of_sd_lines != 1) {
+			pr_err("%s: for one channel only one SD lines is"
+				" needed. num_of_sd_lines = %u\n",
+				__func__, num_of_sd_lines);
+
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+
+		if (sd_line != 0) {
+			pr_err("%s: for one channel tx, need to use SD_0 "
+					"sd_line = %u\n", __func__, sd_line);
+
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+
+		/* Enable SD line 0 for Tx (only option for
 			 * mono audio)
-			 */
-			mi2s_set_sd(mi2s, HDMI, MI2S_SD_0_EN_MAP |
-			MI2S_SD_0_TX_MAP);
-		} else if (channels == 2) {
-			/* Enable single SD line for Tx */
-			mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP << sd_line) |
-			(MI2S_SD_0_TX_MAP << sd_line));
+		 */
+		mi2s_set_sd(mi2s, HDMI, MI2S_SD_0_EN_MAP | MI2S_SD_0_TX_MAP);
 
-			/* Set 2-channel mapping */
-			mi2s_set_output_2ch_map(mi2s, HDMI, sd_line);
-		} else if (channels == 4) {
-			/* Enable 2 adjacent SD lines and map accordingly.
-			 * We map to SDs 0 & 1 or 2 & 3 depending on which
-			 * of those ranges contain the current sd_line
-			 * parameter
-			 */
-			if (sd_line < 2) {
-				mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP |
+	} else if (channels == 2) {
+
+		if (num_of_sd_lines != 1) {
+			pr_err("%s: for two channel only one SD lines is"
+				" needed. num_of_sd_lines = %u\n",
+				__func__, num_of_sd_lines);
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+
+		/* Enable single SD line for Tx */
+		mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP << sd_line) |
+				(MI2S_SD_0_TX_MAP << sd_line));
+
+		/* Set 2-channel mapping */
+		mi2s_set_output_2ch_map(mi2s, HDMI, sd_line);
+
+	} else if (channels == 4) {
+
+		if (num_of_sd_lines != 2) {
+			pr_err("%s: for 4 channels two SD lines are"
+				" needed. num_of_sd_lines = %u\\n",
+				__func__, num_of_sd_lines);
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+
+		if ((sd_line_mask && MI2S_SD_0) &&
+				(sd_line_mask && MI2S_SD_1)) {
+
+			mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP |
 				MI2S_SD_1_EN_MAP) | (MI2S_SD_0_TX_MAP |
 				MI2S_SD_1_TX_MAP));
-				mi2s_set_output_4ch_map(mi2s, HDMI, MI2S_FALSE);
-			} else if (sd_line >= 2) {
-				mi2s_set_sd(mi2s, HDMI, (MI2S_SD_2_EN_MAP |
+			mi2s_set_output_4ch_map(mi2s, HDMI, MI2S_FALSE);
+
+		} else if ((sd_line_mask && MI2S_SD_2) &&
+				(sd_line_mask && MI2S_SD_3)) {
+
+			mi2s_set_sd(mi2s, HDMI, (MI2S_SD_2_EN_MAP |
 				MI2S_SD_3_EN_MAP) | (MI2S_SD_2_TX_MAP |
 				MI2S_SD_3_TX_MAP));
-				mi2s_set_output_4ch_map(mi2s, HDMI, MI2S_TRUE);
-			} else {
-				printk("err\n");
-			}
-		} else if (channels == 6) {
-			mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP |
-			MI2S_SD_1_EN_MAP | MI2S_SD_2_EN_MAP) |
-			(MI2S_SD_0_TX_MAP | MI2S_SD_1_TX_MAP |
-			MI2S_SD_2_TX_MAP));
+
+			mi2s_set_output_4ch_map(mi2s, HDMI, MI2S_TRUE);
 		} else {
+
+			pr_err("%s: for 4 channels invalid SD lines usage"
+				" sd_line_mask = 0x%x\n",
+				__func__, sd_line_mask);
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+	} else if (channels == 6) {
+
+		if (num_of_sd_lines != 3) {
+			pr_err("%s: for 6 channels three SD lines are"
+				" needed. num_of_sd_lines = %u\n",
+				__func__, num_of_sd_lines);
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+
+		if ((sd_line_mask && MI2S_SD_0) &&
+			(sd_line_mask && MI2S_SD_1) &&
+			(sd_line_mask && MI2S_SD_2)) {
+
 			mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP |
+				MI2S_SD_1_EN_MAP | MI2S_SD_2_EN_MAP) |
+				(MI2S_SD_0_TX_MAP | MI2S_SD_1_TX_MAP |
+				MI2S_SD_2_TX_MAP));
+
+		} else if ((sd_line_mask && MI2S_SD_1) &&
+				(sd_line_mask && MI2S_SD_2) &&
+				(sd_line_mask && MI2S_SD_3)) {
+
+			mi2s_set_sd(mi2s, HDMI, (MI2S_SD_1_EN_MAP |
+				MI2S_SD_2_EN_MAP | MI2S_SD_3_EN_MAP) |
+				(MI2S_SD_1_TX_MAP | MI2S_SD_2_TX_MAP |
+				MI2S_SD_3_TX_MAP));
+
+		} else {
+
+			pr_err("%s: for 6 channels invalid SD lines usage"
+				" sd_line_mask = 0x%x\n",
+				__func__, sd_line_mask);
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+	} else if (channels == 8) {
+
+		if (num_of_sd_lines != 4) {
+			pr_err("%s: for 8 channels four SD lines are"
+				" needed. num_of_sd_lines = %u\n",
+				__func__, num_of_sd_lines);
+			ret_val = MI2S_FALSE;
+			goto error;
+		}
+
+		mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP |
 			MI2S_SD_1_EN_MAP | MI2S_SD_2_EN_MAP |
 			MI2S_SD_3_EN_MAP) | (MI2S_SD_0_TX_MAP |
 			MI2S_SD_1_TX_MAP | MI2S_SD_2_TX_MAP |
 			MI2S_SD_3_TX_MAP));
-		}
-	} else
-		ret_val = MI2S_FALSE;
+	} else {
+		pr_err("%s: invalid number channels = %u\n",
+				__func__, channels);
+			ret_val = MI2S_FALSE;
+			goto error;
+	}
 
+	baddr = get_base_addr(mi2s, HDMI);
+
+	val = readl(baddr + MI2S_MODE_OFFSET);
+	pr_debug("%s(): MI2S_MODE = 0x%x\n", __func__, val);
+
+	val = readl(baddr + MI2S_TX_MODE_OFFSET);
+	pr_debug("%s(): MI2S_TX_MODE = 0x%x\n", __func__, val);
+
+
+error:
 	/* Release device from reset */
 	mi2s_release(mi2s, HDMI);
 
@@ -531,10 +636,58 @@ bool mi2s_set_hdmi_output_path(uint8_t channels, uint8_t size, uint8_t sd_line)
 }
 EXPORT_SYMBOL(mi2s_set_hdmi_output_path);
 
-bool mi2s_set_hdmi_input_path(uint8_t channels, uint8_t size, uint8_t sd_line)
+bool mi2s_set_hdmi_input_path(uint8_t channels, uint8_t size,
+		uint8_t sd_line_mask)
 {
 	bool ret_val = MI2S_TRUE;
 	struct mi2s_state *mi2s = &the_mi2s_state;
+	u8 sd_line, num_of_sd_lines = 0;
+	void __iomem *baddr;
+	uint32_t val;
+
+	pr_debug("%s: channels = %u size = %u sd_line_mask = 0x%x\n", __func__,
+		channels, size, sd_line_mask);
+
+	if ((channels != 1) && (channels != MAX_NUM_CHANNELS_IN)) {
+
+		pr_err("%s: invalid number of channels. channels = %u\n",
+				__func__, channels);
+		return  MI2S_FALSE;
+	}
+
+	if (size > WT_MAX) {
+
+		pr_err("%s: mi2s word size can not be greater than 32 bits\n",
+				__func__);
+		return MI2S_FALSE;
+	}
+
+	sd_line_mask &=  MI2S_SD_LINE_MASK;
+
+	if (!sd_line_mask) {
+		pr_err("%s: Did not set any data lines to use "
+			" sd_line_mask =0x%x\n", __func__, sd_line_mask);
+		return  MI2S_FALSE;
+	}
+
+	num_of_sd_lines = num_of_bits_set(sd_line_mask);
+
+	if (num_of_sd_lines != 1) {
+		pr_err("%s: for two channel input only one SD lines is"
+			" needed. num_of_sd_lines = %u sd_line_mask = 0x%x\n",
+			__func__, num_of_sd_lines, sd_line_mask);
+		return MI2S_FALSE;
+	}
+
+	sd_line = find_first_bit((unsigned long *)&sd_line_mask,
+			sizeof(sd_line_mask));
+
+	/* Ensure sd_line parameter is valid (0-max) */
+	if (sd_line > MAX_SD_LINES) {
+		pr_err("%s: Line number can not be greater than = %u\n",
+			__func__, MAX_SD_LINES);
+		return MI2S_FALSE;
+	}
 
 	mutex_lock(&mi2s->mutex_lock);
 	/* Put device in reset */
@@ -543,10 +696,7 @@ bool mi2s_set_hdmi_input_path(uint8_t channels, uint8_t size, uint8_t sd_line)
 	mi2s_master(mi2s, HDMI, 1);
 
 	/* Set word type */
-	if (size <= WT_MAX)
-		mi2s_set_word_type(mi2s, HDMI, size);
-	else
-		ret_val = MI2S_FALSE;
+	mi2s_set_word_type(mi2s, HDMI, size);
 
 	/* Enable clock crossing synchronization of WR DMA ACK */
 	mi2s_set_input_clk_synch(mi2s, HDMI);
@@ -554,20 +704,19 @@ bool mi2s_set_hdmi_input_path(uint8_t channels, uint8_t size, uint8_t sd_line)
 	/* Ensure channels parameter is valid (non-zero, less than max,
 	 * and even or mono)
 	 */
-	if ((channels > 0) && (channels <= MAX_NUM_CHANNELS_IN) &&
-		((channels == 1) || (channels % 2 == 0))) {
-		mi2s_set_input_num_channels(mi2s, HDMI, channels);
-	} else {
-		ret_val = MI2S_FALSE;
-	}
+	mi2s_set_input_num_channels(mi2s, HDMI, channels);
 
-	/* Ensure sd_line parameter is valid (0-max) */
-	if (sd_line < MAX_SD_LINES) {
-		/* Enable single SD line for Rx */
-		mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP << sd_line));
-	} else {
-		ret_val = MI2S_FALSE;
-	}
+	mi2s_set_input_sd_line(mi2s, HDMI, sd_line);
+
+	mi2s_set_sd(mi2s, HDMI, (MI2S_SD_0_EN_MAP << sd_line));
+
+	baddr = get_base_addr(mi2s, HDMI);
+
+	val = readl(baddr + MI2S_MODE_OFFSET);
+	pr_debug("%s(): MI2S_MODE = 0x%x\n", __func__, val);
+
+	val = readl(baddr + MI2S_RX_MODE_OFFSET);
+	pr_debug("%s(): MI2S_RX_MODE = 0x%x\n", __func__, val);
 
 	/* Release device from reset */
 	mi2s_release(mi2s, HDMI);
@@ -644,6 +793,7 @@ bool mi2s_set_codec_input_path(uint8_t channels, uint8_t size)
 	return ret_val;
 }
 EXPORT_SYMBOL(mi2s_set_codec_input_path);
+
 
 static int mi2s_probe(struct platform_device *pdev)
 {
@@ -729,4 +879,4 @@ module_init(mi2s_init);
 module_exit(mi2s_exit);
 
 MODULE_DESCRIPTION("MSM MI2S driver");
-MODULE_LICENSE("Dual BSD/GPL");
+MODULE_LICENSE("GPL v2");

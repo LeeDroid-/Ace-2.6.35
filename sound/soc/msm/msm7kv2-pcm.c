@@ -36,7 +36,7 @@
 #include <linux/slab.h>
 
 #include "msm7kv2-pcm.h"
-#include <mach/qdsp5v2/audio_dev_ctl.h>
+#include <mach/qdsp5v2_1x/audio_dev_ctl.h>
 #include <mach/debug_mm.h>
 
 #define HOSTPCM_STREAM_ID 5
