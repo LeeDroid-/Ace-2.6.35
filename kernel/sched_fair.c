@@ -3710,7 +3710,6 @@ static void task_move_group_fair(struct task_struct *p, int on_rq)
  	if (!on_rq)
 		p->se.vruntime += cfs_rq_of(&p->se)->min_vruntime;
 }
-#endif
 
 static void prep_move_group_fair(struct task_struct *p, int on_rq)
 {
