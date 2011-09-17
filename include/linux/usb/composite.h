@@ -353,9 +353,14 @@ struct usb_composite_dev {
 	/* protects at least deactivation count */
 	spinlock_t			lock;
 
-	struct switch_dev sdev;
-	/* used by usb_composite_force_reset to avoid signalling switch changes */
-	bool				mute_switch;
+  /* switch indicating current configuration */
+	struct switch_dev	sw_config;
+	struct switch_dev	sw_connected;
+  /* switch indicating connected/disconnected state */
+	struct switch_dev	sw_connect2pc;
+  /* current connected state for sw_connected */
+	bool	connected;
+
 	struct work_struct switch_work;
 };
 
