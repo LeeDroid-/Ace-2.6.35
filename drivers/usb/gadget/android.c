@@ -526,20 +526,12 @@ int android_switch_function(unsigned func)
 
 #ifdef CONFIG_USB_GADGET_MSM_72K
 	/* avoid sending a disconnect switch event until after we disconnect */
-	dev->cdev->mute_switch = 1;
 	msm_hsusb_request_reset();
 #else
-	/* force reenumeration */
-	if (dev->cdev && dev->cdev->gadget &&
-			dev->cdev->gadget->speed != USB_SPEED_UNKNOWN) {
-
-		/* avoid sending a disconnect switch event until after we disconnect */
-		dev->cdev->mute_switch = 1;
-
-		usb_gadget_disconnect(dev->cdev->gadget);
-		msleep(10);
-		usb_gadget_connect(dev->cdev->gadget);
-		}
+	usb_gadget_disconnect(dev->cdev->gadget);
+	msleep(10);
+	usb_gadget_connect(dev->cdev->gadget);
+}
 #endif
 	return 0;
 }
